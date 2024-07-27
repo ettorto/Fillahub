@@ -32,9 +32,12 @@ class FillaPost extends StatelessWidget {
               shape:BoxShape.circle,
               color: Colors.grey[300]),
             padding:EdgeInsets.all(10),
-            child: const Icon(applyTextScaling: Icons.person,
-            color)
+            child: const Icon(
+              Icons.person,
+              color: Colors.white,
+            ),
           ),
+          const SizedBox(width:20),
           //message and user email
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

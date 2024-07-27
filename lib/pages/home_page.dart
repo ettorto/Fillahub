@@ -23,22 +23,22 @@ class _HomePageState extends State<HomePage> {
     FirebaseAuth.instance.signOut();
   }
 
-
-  void postMessage(){
+  void postMessage() {
     //only post if there is something in the textfield
-    if (textController.text.isNotEmpty){
+    if (textController.text.isNotEmpty) {
       //store in firebase
       FirebaseFirestore.instance.collection("User Posts").add({
-          'UserEmail': currentUser.email,
-          'Message': textController.text,
-          'TimeStamp': Timestamp.now(),
-
+        'UserEmail': currentUser.email,
+        'Message': textController.text,
+        'TimeStamp': Timestamp.now(),
       });
     }
 
-
+    //clear the textfield
+    setState(() {
+      textController.clear();
+    });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -59,35 +59,35 @@ class _HomePageState extends State<HomePage> {
             children: [
               //fillahub
               Expanded(
-                child: StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                  .collection("User Posts")
-                  .orderBy(
-                    "TimeStamp",
-                    descending: false,
-                    ).snapshots(), 
-                  builder: (context,snapshot){
-                    if (snapshot.hasData){
-                      return ListView.builder(
-                        itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index) {
-                          //get the message
-                          final post = snapshot.data!.docs[index];
-                          return FillaPost(
-                            message: post['Message'],
-                             user: post['UserEmail'], 
-                            
-                            );
-                        });
-                    }else if (snapshot.hasError){
-                      return Center(
-                        child: Text('Error: ${snapshot.error}'),
+                  child: StreamBuilder(
+                      stream: FirebaseFirestore.instance
+                          .collection("User Posts")
+                          .orderBy(
+                            "TimeStamp",
+                            descending: false,
+                          )
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return ListView.builder(
+                              itemCount: snapshot.data!.docs.length,
+                              itemBuilder: (context, index) {
+                                //get the message
+                                final post = snapshot.data!.docs[index];
+                                return FillaPost(
+                                  message: post['Message'],
+                                  user: post['UserEmail'],
+                                );
+                              });
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        }
+                        return const Center(
+                          child: CircularProgressIndicator(),
                         );
-                    }
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                      );
-                  })),
+                      })),
               //post a message
               Padding(
                 padding: const EdgeInsets.all(30.0),
@@ -96,21 +96,22 @@ class _HomePageState extends State<HomePage> {
                     //textfield
                     Expanded(
                       child: MyTextField(
-                        controller: textController, 
-                        hintText: "Share your filla here", 
+                        controller: textController,
+                        hintText: "Share your filla here",
                         obscureText: false,
-                        ),
-                        ),
+                      ),
+                    ),
                     //post button
                     IconButton(
-                      onPressed: postMessage, 
-                      icon: const Icon(Icons.arrow_circle_up))
+                        onPressed: postMessage,
+                        icon: const Icon(Icons.arrow_circle_up))
                   ],
-                  ),
+                ),
               ),
-          
+
               //Logged in as
-              Text("Logged in as: " + currentUser.email!),
+              Text("Logged in as: " + currentUser.email!,
+                  style: TextStyle(color: Colors.white)),
             ],
           ),
         ));
