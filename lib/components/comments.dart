@@ -7,8 +7,8 @@ class Comment extends StatelessWidget {
   const Comment({
     super.key,
     required this.text,
-    required this.time,
     required this.user,
+    required this.time,
     });
 
   @override
@@ -18,7 +18,10 @@ class Comment extends StatelessWidget {
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(4),
       ),
+      margin: const EdgeInsets.only(bottom:5),
+      padding: EdgeInsets.all(15),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           //comment
           Text(text),
@@ -26,9 +29,16 @@ class Comment extends StatelessWidget {
           //user and time
           Row(
             children: [
-              Text(user),
-              Text("."),
-              Text(time),
+              Text(
+                user,
+                style: TextStyle(color: Colors.grey[400]),
+                ),
+              
+              Text(
+                ".",
+                style: TextStyle(color: Colors.grey[400]),),
+              Text(time,
+              style: TextStyle(color: Colors.grey[400])),
             ],
           )
 
