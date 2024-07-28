@@ -1,55 +1,99 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fillahub/components/like_button.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class FillaPost extends StatelessWidget {
+class FillaPost extends StatefulWidget {
   final String message;
   final String user;
-  
+  final String postId;
+  final List<String> likes;
 
-  const FillaPost(
-      {super.key,
-      required this.message,
-      required this.user,
-      
+  const FillaPost({
+    super.key,
+    required this.message,
+    required this.user,
+    required this.postId,
+    required this.likes,
+  });
+
+  @override
+  State<FillaPost> createState() => _FillaPostState();
+}
+
+class _FillaPostState extends State<FillaPost> {
+  //user
+  final currentUser = FirebaseAuth.instance.currentUser!;
+  bool isLiked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    isLiked = widget.likes.contains(currentUser.email);
+  }
+
+  void toggleLike() {
+    setState(() {
+      isLiked = !isLiked;
+    });
+
+//access the document in firebase
+    DocumentReference postRef =
+        FirebaseFirestore.instance.collection('User Posts').doc(widget.postId);
+
+    if (isLiked) {
+      //if post is liked,add the users email to the Likes field
+      postRef.update({
+        'Likes': FieldValue.arrayUnion([currentUser.email])
       });
+    } else {
+      //if the post is unliked remove that user from the Likes field
+      postRef.update({
+        'Likes': FieldValue.arrayRemove([currentUser.email])
+      });
+    }
+  }
 
-  
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        ),
-      margin: EdgeInsets.only(top:25, left:25, right: 25),
+      ),
+      margin: EdgeInsets.only(top: 25, left: 25, right: 25),
       padding: EdgeInsets.all(25),
-
       child: Row(
         children: [
-          //profile pic
-          Container(
-            decoration: BoxDecoration(
-              shape:BoxShape.circle,
-              color: Colors.grey[300]),
-            padding:EdgeInsets.all(10),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
+         
+          Column(
+            children: [
+              // like button
+              LikeButton(isLiked: isLiked, onTap: toggleLike),
+
+              const SizedBox(height:5),
+
+              //likes counter
+              Text(widget.likes.length.toString(),
+              style: TextStyle(color: Colors.grey),
+              
+              ),
+
+
+            ],
           ),
-          const SizedBox(width:20),
+          const SizedBox(width: 20),
           //message and user email
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                user,
+                widget.user,
                 style: TextStyle(color: Colors.grey[500]),
-                ),
-                const SizedBox(height: 10
-                
-                ),
-              Text(message),
+              ),
+              const SizedBox(height: 10),
+              Text(widget.message),
             ],
           )
         ],

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fillahub/components/drawer.dart';
 import 'package:fillahub/components/filla_posts.dart';
 import 'package:fillahub/components/text_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
         'UserEmail': currentUser.email,
         'Message': textController.text,
         'TimeStamp': Timestamp.now(),
+        'Likes': [],
       });
     }
 
@@ -45,15 +47,16 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
         backgroundColor: Colors.grey[300],
         appBar: AppBar(
-            title: Text("FillaHub"),
+            title: const Text("FillaHub"),
             backgroundColor: Colors.grey[900],
             actions: [
               //sign out button
               IconButton(
                 onPressed: signOut,
-                icon: Icon(Icons.logout),
+                icon: const Icon(Icons.logout),
               ),
             ]),
+        drawer: MyDrawer(),
         body: Center(
           child: Column(
             children: [
@@ -77,6 +80,8 @@ class _HomePageState extends State<HomePage> {
                                 return FillaPost(
                                   message: post['Message'],
                                   user: post['UserEmail'],
+                                  postId: post.id,
+                                  likes: List<String>.from(post['Likes'] ?? []),
                                 );
                               });
                         } else if (snapshot.hasError) {
