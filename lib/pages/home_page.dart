@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fillahub/components/drawer.dart';
 import 'package:fillahub/components/filla_posts.dart';
 import 'package:fillahub/components/text_field.dart';
+import 'package:fillahub/pages/profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -42,6 +43,19 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  //navigate to profile page
+  void goToProfilePage() {
+    // pop menu drawer
+    Navigator.pop(context);
+
+    // go to profile page
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => const ProfilePage(),
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,14 +63,11 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(
             title: const Text("FillaHub"),
             backgroundColor: Colors.grey[900],
-            actions: [
-              //sign out button
-              IconButton(
-                onPressed: signOut,
-                icon: const Icon(Icons.logout),
-              ),
-            ]),
-        drawer: MyDrawer(),
+           ),
+        drawer: MyDrawer(
+          onProfileTap: goToProfilePage,
+          onSignout: signOut,
+        ),
         body: Center(
           child: Column(
             children: [
