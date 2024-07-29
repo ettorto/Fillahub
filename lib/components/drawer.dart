@@ -2,6 +2,7 @@ import 'package:fillahub/components/my_list_tile.dart';
 import 'package:flutter/material.dart';
 
 class MyDrawer extends StatelessWidget {
+  
   final void Function()? onProfileTap;
   final void Function()? onSignout;
   const MyDrawer({
@@ -13,7 +14,7 @@ class MyDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.grey[800],
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -49,11 +50,12 @@ class MyDrawer extends StatelessWidget {
 
             //logout list tile
             MyListTile(
-              icon: Icons.person,
+              icon: Icons.logout,
               text: 'L O G O U T',
               onTap: onSignout,
             ),
           ],
-        ));
+        ),
+        );
   }
 }

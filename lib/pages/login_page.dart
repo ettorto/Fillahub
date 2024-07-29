@@ -12,17 +12,21 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  //text editing controllers
   final emailTextController = TextEditingController();
   final passwordTextController = TextEditingController();
 
-  //sign in user
-  void signIn() async {
+  Future<void> _refresh() async {
+    // Add your refresh logic here
+    await Future.delayed(Duration(seconds: 1));
+  }
 
-    //show loading circle
-    showDialog(context: context, builder:(context) => const Center(
-      child: CircularProgressIndicator(),
-    ) ,);
+  void signIn() async {
+    showDialog(
+      context: context,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -30,94 +34,107 @@ class _LoginPageState extends State<LoginPage> {
         password: passwordTextController.text,
       );
 
-      //pop loading circle
-      if(context.mounted) Navigator.pop(context);
+      if (context.mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-       Navigator.pop(context);
-      displayMessage(e.code);
+      Navigator.pop(context);
+      displayMessage(getFriendlyMessage(e.code));
     }
   }
 
-//display error message
+  String getFriendlyMessage(String errorCode) {
+    switch (errorCode) {
+      case 'invalid-credential':
+        return 'Please ensure that your password and email are correct';
+      case 'user-disabled':
+        return 'This user has been disabled. Please contact support.';
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Incorrect password. Please try again.';
+      default:
+        return 'An unexpected error occurred. Please try again later.';
+    }
+  }
+
   void displayMessage(String message) {
     showDialog(
         context: context,
         builder: (builder) => AlertDialog(
-              title: Text(message),
+              title: Text('Login Failed'),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
             ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.grey[300],
-        body: SafeArea(
+      backgroundColor: Colors.grey[300],
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 50),
-                  //Logo
-                  Icon(
-                    Icons.lock,
-                    size: 100,
-                  ),
-
-                  //welcome back message
-                  const Text(
-                    "Welcome Back you've been missed",
-                    style: TextStyle(
-                      color: Colors.grey,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    Icon(
+                      Icons.lock,
+                      size: 100,
                     ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  //email textfield
-                  MyTextField(
-                      controller: emailTextController,
-                      hintText: 'Email',
-                      obscureText: false),
-
-                  const SizedBox(height: 10),
-                  //password textfield
-                  MyTextField(
-                      controller: passwordTextController,
-                      hintText: 'Password',
-                      obscureText: true),
-
-                  const SizedBox(height: 20),
-
-                  //sign in button
-                  MyButton(onTap: signIn, text: 'Sign In'),
-
-                  // go to register page
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Not a member?",
-                        style: TextStyle(color: Colors.grey[700]),
+                    const Text(
+                      "Welcome back, you've been missed!",
+                      style: TextStyle(
+                        color: Colors.grey,
                       ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: widget.onTap,
-                        child: const Text(
-                          "Register now",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
+                    ),
+                    const SizedBox(height: 25),
+                    MyTextField(
+                        controller: emailTextController,
+                        hintText: 'Email',
+                        obscureText: false),
+                    const SizedBox(height: 10),
+                    MyTextField(
+                        controller: passwordTextController,
+                        hintText: 'Password',
+                        obscureText: true),
+                    const SizedBox(height: 20),
+                    MyButton(onTap: signIn, text: 'Sign In'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Not a member?",
+                          style: TextStyle(color: Colors.grey[700]),
                         ),
-                      )
-                    ],
-                  )
-                ],
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: widget.onTap,
+                          child: const Text(
+                            "Register now",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
               ),
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
