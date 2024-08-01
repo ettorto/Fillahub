@@ -17,6 +17,7 @@ class FillaPost extends StatefulWidget {
   final String postId;
   final List<String> likes;
   final String? imageUrl;
+  final Map<String, dynamic>? location;
 
   const FillaPost({
     super.key,
@@ -26,6 +27,7 @@ class FillaPost extends StatefulWidget {
     required this.postId,
     required this.likes,
     this.imageUrl,
+    this.location,
   });
 
   @override
@@ -177,7 +179,7 @@ class _FillaPostState extends State<FillaPost> {
     );
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -218,20 +220,25 @@ class _FillaPostState extends State<FillaPost> {
                         padding: const EdgeInsets.only(top: 10),
                         child: Container(
                           constraints: BoxConstraints(
-                            maxHeight: 200, // Set a max height for the image
-                            maxWidth: double
-                                .infinity, // Set a max width for the image
+                            maxHeight: 200,
+                            maxWidth: double.infinity,
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
                               widget.imageUrl!,
-                              width: double
-                                  .infinity, // Make the image fill the width
-                              fit: BoxFit
-                                  .cover, // Ensure the image covers the container
+                              width: double.infinity,
+                              fit: BoxFit.cover,
                             ),
                           ),
+                        ),
+                      ),
+                    if (widget.location != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Text(
+                          'Location: ${widget.location!['latitude']}, ${widget.location!['longitude']}',
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                       ),
                   ],

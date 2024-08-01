@@ -118,14 +118,16 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Profile Page",
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.grey[900],
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white), // Set back button color to white
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,

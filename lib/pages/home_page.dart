@@ -10,9 +10,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart'; // Import geolocator package
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.postId});
+  
+  final String? postId;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,6 +28,50 @@ class _HomePageState extends State<HomePage> {
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
+  Map<String, dynamic>? _location; // Store location
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.postId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToPost(widget.postId!);
+      });
+    }
+  }
+
+  Future<void> _scrollToPost(String postId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('User Posts')
+        .doc(postId)
+        .get();
+
+    if (snapshot.exists) {
+      final index = await _getPostIndex(postId);
+      if (index != null) {
+        _scrollController.animateTo(
+          index * 100.0, // Assuming each post item has a height of 100.0
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
+  }
+
+  Future<int?> _getPostIndex(String postId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('User Posts')
+        .orderBy('TimeStamp', descending: false)
+        .get();
+
+    for (int i = 0; i < snapshot.docs.length; i++) {
+      if (snapshot.docs[i].id == postId) {
+        return i;
+      }
+    }
+    return null;
+  }
 
   void signOut() {
     FirebaseAuth.instance.signOut();
@@ -44,8 +91,41 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _pickLocation() async {
+    // Check if location services are enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location services are disabled.')),
+      );
+      return;
+    }
+
+    // Request permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.whileInUse && permission != LocationPermission.always) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Location permission denied.')),
+        );
+        return;
+      }
+    }
+
+    // Get current location
+    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    setState(() {
+      _location = {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      };
+    });
+  }
+
   Future<void> postMessage() async {
-    if (!_isUploading && (textController.text.isNotEmpty || _pickedMedia != null)) {
+    if (!_isUploading &&
+        (textController.text.isNotEmpty || _pickedMedia != null)) {
       setState(() {
         _isUploading = true;
       });
@@ -62,6 +142,7 @@ class _HomePageState extends State<HomePage> {
           'TimeStamp': Timestamp.now(),
           'Likes': [],
           'ImageURL': mediaUrl,
+          'Location': _location, // Add location to the post
         });
       } catch (e) {
         print('Error posting message: $e');
@@ -73,6 +154,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         textController.clear();
         _pickedMedia = null;
+        _location = null; // Clear location
         _isUploading = false;
       });
     } else {
@@ -80,7 +162,8 @@ class _HomePageState extends State<HomePage> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Submission Error"),
-          content: const Text("Please enter a message or pick an image/video to post."),
+          content: const Text(
+              "Please enter a message or pick an image/video to post."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -95,7 +178,9 @@ class _HomePageState extends State<HomePage> {
   Future<String?> _uploadMedia() async {
     if (_pickedMedia == null) return null;
 
-    final storageRef = FirebaseStorage.instance.ref().child('post_media/${DateTime.now().toString()}');
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child('post_media/${DateTime.now().toString()}');
     try {
       final uploadTask = storageRef.putFile(File(_pickedMedia!.path));
       final snapshot = await uploadTask.whenComplete(() {});
@@ -124,9 +209,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.grey[800],
+        backgroundColor: Color.fromARGB(255, 15, 11, 11),
         centerTitle: true,
         title: const Text(
           "FillaHub",
@@ -164,6 +249,7 @@ class _HomePageState extends State<HomePage> {
                         likes: List<String>.from(post['Likes'] ?? []),
                         time: formatDate(post['TimeStamp']),
                         imageUrl: post['ImageURL'],
+                        location: post['Location'], // Pass location to FillaPost
                       );
                     },
                   );
@@ -179,7 +265,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(30.0),
+            padding: const EdgeInsets.all(10.0),
             child: Column(
               children: [
                 if (_pickedMedia != null)
@@ -205,25 +291,25 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     IconButton(
-                      onPressed: _isUploading ? null : postMessage,
-                      icon: const Icon(Icons.arrow_circle_up),
-                    ),
-                    IconButton(
-                      onPressed: _isUploading ? null : _pickImageFromCamera,
+                      onPressed: _pickImageFromCamera,
                       icon: const Icon(Icons.camera_alt),
                     ),
                     IconButton(
-                      onPressed: _isUploading ? null : _pickMedia,
-                      icon: const Icon(Icons.add),
+                      onPressed: _pickMedia,
+                      icon: const Icon(Icons.image),
+                    ),
+                    IconButton(
+                      onPressed: _pickLocation, // Add button for picking location
+                      icon: const Icon(Icons.location_on),
+                    ),
+                    IconButton(
+                      onPressed: postMessage,
+                      icon: const Icon(Icons.send),
                     ),
                   ],
                 ),
               ],
             ),
-          ),
-          Text(
-            "Logged in as: ${currentUser.email}",
-            style: TextStyle(color: Colors.white),
           ),
         ],
       ),

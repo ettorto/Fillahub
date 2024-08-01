@@ -85,7 +85,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
@@ -97,9 +97,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 50),
-                    Icon(
-                      Icons.lock,
-                      size: 100,
+                    Image.asset(
+                      'assets/images/fillahub1.png',
+                      width: 100,
+                      height: 100,
                     ),
                     const Text(
                       "Let's get Started",
