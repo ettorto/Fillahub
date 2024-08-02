@@ -1,4 +1,3 @@
-import 'package:fillahub/api/firebase_api.dart';
 import 'package:fillahub/auth/auth.dart';
 import 'package:flutter/material.dart';
 
@@ -8,22 +7,11 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+
   @override
   void initState() {
     super.initState();
-    _checkInitialMessage();
-  }
-
-  Future<void> _checkInitialMessage() async {
-    final initialMessage = await FirebaseApi().getInitialMessage();
-    if (initialMessage != null) {
-      Navigator.of(context).pushReplacementNamed(
-        'home_screen',
-        arguments: {'postId': initialMessage.data['postId']},
-      );
-    } else {
-      _navigateToAuthPage();
-    }
+    _navigateToAuthPage();
   }
 
   _navigateToAuthPage() async {
@@ -38,7 +26,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-          
             Image(
               image: AssetImage('assets/images/fillahub1.png'),
               width: 100,

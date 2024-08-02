@@ -237,7 +237,7 @@ class _FillaPostState extends State<FillaPost> {
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
                         child: Text(
-                          'Location: ${widget.location!['latitude']}, ${widget.location!['longitude']}',
+                          'Location: ${widget.location!['name']}',
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ),

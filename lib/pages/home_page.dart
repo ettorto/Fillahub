@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fillahub/components/drawer.dart';
 import 'package:fillahub/components/filla_posts.dart';
@@ -10,7 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart'; // Import geolocator package
+import 'package:geolocator/geolocator.dart'; 
+import 'package:geocoding/geocoding.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.postId});
@@ -91,6 +91,23 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+
+
+  // Add the reverse geocoding method
+Future<String> _getPlaceName(double latitude, double longitude) async {
+  try {
+    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    if (placemarks.isNotEmpty) {
+      return placemarks.first.name ?? '';
+    }
+  } catch (e) {
+    print('Error getting place name: $e');
+  }
+  return 'Unknown location';
+}
+
+
+
   Future<void> _pickLocation() async {
     // Check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -114,66 +131,68 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Get current location
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  String placeName = await _getPlaceName(position.latitude, position.longitude);
+  setState(() {
+    _location = {
+      'latitude': position.latitude,
+      'longitude': position.longitude,
+      'name': placeName,
+    };
+  });
+}
+
+ Future<void> postMessage() async {
+  if (!_isUploading &&
+      (textController.text.isNotEmpty || _pickedMedia != null)) {
     setState(() {
-      _location = {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-      };
+      _isUploading = true;
     });
-  }
 
-  Future<void> postMessage() async {
-    if (!_isUploading &&
-        (textController.text.isNotEmpty || _pickedMedia != null)) {
-      setState(() {
-        _isUploading = true;
+    String? mediaUrl;
+    if (_pickedMedia != null) {
+      mediaUrl = await _uploadMedia();
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection("User Posts").add({
+        'UserEmail': currentUser.email,
+        'Message': textController.text,
+        'TimeStamp': Timestamp.now(),
+        'Likes': [],
+        'ImageURL': mediaUrl,
+        'Location': _location, // Add location to the post
       });
-
-      String? mediaUrl;
-      if (_pickedMedia != null) {
-        mediaUrl = await _uploadMedia();
-      }
-
-      try {
-        await FirebaseFirestore.instance.collection("User Posts").add({
-          'UserEmail': currentUser.email,
-          'Message': textController.text,
-          'TimeStamp': Timestamp.now(),
-          'Likes': [],
-          'ImageURL': mediaUrl,
-          'Location': _location, // Add location to the post
-        });
-      } catch (e) {
-        print('Error posting message: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post message')),
-        );
-      }
-
-      setState(() {
-        textController.clear();
-        _pickedMedia = null;
-        _location = null; // Clear location
-        _isUploading = false;
-      });
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Submission Error"),
-          content: const Text(
-              "Please enter a message or pick an image/video to post."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
+    } catch (e) {
+      print('Error posting message: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to post message')),
       );
     }
+
+    setState(() {
+      textController.clear();
+      _pickedMedia = null;
+      _location = null; // Clear location
+      _isUploading = false;
+    });
+  } else {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Submission Error"),
+        content: const Text(
+            "Please enter a message or pick an image/video to post."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
+}
 
   Future<String?> _uploadMedia() async {
     if (_pickedMedia == null) return null;
